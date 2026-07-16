@@ -131,6 +131,10 @@
   .tablewrap{overflow-x:auto;width:100%}
   table.dt{width:100%;border-collapse:collapse;font-size:11.5px}
   #clin-table{min-width:680px}
+  .cmi{font-size:9.5px;font-weight:700;color:var(--primary);text-decoration:none;border:1px solid var(--primary-soft);background:var(--primary-soft);padding:1px 6px;border-radius:5px;margin-left:6px;white-space:nowrap}
+  .cmi:hover{background:var(--primary);color:#fff}
+  .outside.gflag{cursor:pointer;text-decoration:underline dotted}
+  .outside.gflag:hover{filter:brightness(.85)}
   table.dt th{text-align:left;color:var(--muted);font-weight:700;font-size:10px;text-transform:uppercase;letter-spacing:.4px;padding:7px 9px;border-bottom:1.5px solid var(--line)}
   table.dt td{padding:8px 9px;border-bottom:1px solid var(--line2);vertical-align:middle}
   table.dt tr.click{cursor:pointer}
@@ -229,7 +233,7 @@
 </style>
 </head>
 <body>
-<div class="mockbanner">⚠️ PROTOTYPE — illustrative dummy data. Domains 1–2 reflect the High-Risk Antipsychotics QI working draft; domains 3–6 are illustrative pending clinical sign-off. KONEKSI AU–Indonesia project · not for clinical use.</div>
+<div class="mockbanner">⚠️ PROTOTYPE v3 — illustrative dummy data. All six domains are now specified from the July 2026 QI spreadsheet; values shown are placeholders pending live data. KONEKSI AU–Indonesia project · not for clinical use.</div>
 <div class="app">
   <aside class="sidebar">
     <div class="brand">
@@ -264,13 +268,11 @@
           <select id="med-select">
             <option value="clozapine">Clozapine</option>
             <option value="lithium">Lithium</option>
-            <option value="valproate">Valproate</option>
-            <option value="benzo">Benzodiazepines</option>
             <option value="rispal">Risperidone / Paliperidone</option>
             <option value="olanzapine">Olanzapine</option>
             <option value="haloperidol">Haloperidol</option>
             <option value="quetiapine">Quetiapine</option>
-            <option value="all">All high-risk agents</option>
+            <option value="all">Antipsychotic polypharmacy</option>
           </select></div>
         <div class="slicer"><label>Ward</label>
           <select><option>All wards</option><option>Acute A</option><option>Acute B</option><option>PICU</option><option>Older Adult</option><option>Rehab</option></select></div>
@@ -333,7 +335,7 @@
 
           <div class="step"><span>•</span>Six content domains (shared by both views)</div>
           <div class="domstrip" id="domstrip"></div>
-          <div class="note">◷ = medication group with indicators still in development. Domains 3–6 carry illustrative content pending clinical sign-off via the rapid face-validity check.</div>
+          <div class="note">◷ = medication group with indicators still in development. All six domains are now specified from the July 2026 QI spreadsheet; the values shown are placeholders pending live data.</div>
         </div>
       </section>
 
@@ -409,7 +411,7 @@
             <div class="chartbox h240"><canvas id="stew-poly"></canvas></div>
           </div>
           <div class="card">
-            <div class="card-head"><div><h3>Dose as % of recommended maximum</h3><div class="csub">Distribution across the antipsychotic cohort · &gt;100% = high-dose</div></div></div>
+            <div class="card-head"><div><h3>Dose as chlorpromazine equivalents (CPZE)</h3><div class="csub">Distribution across the antipsychotic cohort · &gt;1000 mg/day = high-dose</div></div></div>
             <div class="chartbox h240"><canvas id="stew-dose"></canvas></div>
           </div>
         </div>
@@ -432,7 +434,7 @@
           <div class="pav" id="p-init">JD</div>
           <div>
             <div class="pname" id="p-name">Patient J.D.</div>
-            <div class="pmeta" id="p-meta">52 y · Male · PICU · Schizophrenia · MHA Section 3 · LOS 18 d</div>
+            <div class="pmeta" id="p-meta">52 y · Male · PICU · Schizophrenia · MHA TA · LOS 18 d</div>
           </div>
           <div class="toggle" id="p-toggle" style="margin-left:auto"><button data-mode="change" class="on">Change summary</button><button data-mode="detail">Full detail</button></div>
           <div class="back" onclick="show('clinician')" style="margin-left:10px">‹ Back</div>
@@ -440,17 +442,17 @@
 
         <div class="p-detail change-mode" id="p-detail">
           <div class="card" style="margin-bottom:14px">
-            <div class="card-head"><div><h3>Change since admission</h3><div class="csub">Clinicians prioritise change over absolute values — key metrics vs admission baseline</div></div></div>
+            <div class="card-head"><div><h3>Change since admission</h3><div class="csub">Clinicians prioritise change over absolute values — key metrics vs admission baseline and previous admission</div></div></div>
             <div class="changegrid" id="p-changegrid"></div>
           </div>
 
           <div class="grid g-23" style="margin-bottom:14px">
             <div class="card">
               <div class="card-head"><div><h3>Active medicines &amp; alerts</h3><div class="csub">High-risk agents under QI monitoring</div></div></div>
-              <div class="medrow"><span class="mn">Clozapine 300 mg nocte</span><span class="flag b">Titration day 9</span></div>
-              <div class="medrow"><span class="mn">Metformin 500 mg BD</span><span class="flag g">Metabolic cover</span></div>
-              <div class="medrow"><span class="mn">Aripiprazole 10 mg daily</span><span class="flag a">Polypharmacy (2 AP)</span></div>
-              <div class="medrow"><span class="mn">Diazepam 5 mg PRN</span><span class="flag b">PRN</span></div>
+              <div class="medrow"><span class="mn">Clozapine 300 mg nocte <a class="cmi" href="https://www.healthdirect.gov.au/medicines/medicinal-product/aht,20654/clozapine" target="_blank" rel="noopener">CMI ↗</a></span><span class="flag b">Titration day 9</span></div>
+              <div class="medrow"><span class="mn">Metformin 500 mg BD <a class="cmi" href="https://www.healthdirect.gov.au/medicines/medicinal-product/aht,20727/" target="_blank" rel="noopener">CMI ↗</a></span><span class="flag g">Metabolic cover</span></div>
+              <div class="medrow"><span class="mn">Aripiprazole 10 mg daily <a class="cmi" href="https://www.healthdirect.gov.au/medicines/medicinal-product/aht,20233/aripiprazole" target="_blank" rel="noopener">CMI ↗</a></span><span class="flag a">Polypharmacy (2 AP)</span></div>
+              <div class="medrow"><span class="mn">Diazepam 5 mg PRN <a class="cmi" href="https://www.healthdirect.gov.au/medicines/medicinal-product/aht,20759" target="_blank" rel="noopener">CMI ↗</a></span><span class="flag b">PRN</span></div>
               <div style="margin-top:12px"><h3 style="font-size:12px">Active alerts (by domain)</h3></div>
               <div class="medrow"><span class="mn" style="color:var(--red)">CRP 7.2 mg/L (&gt;5.0)</span><span class="flag r">Med-specific · myocarditis</span></div>
               <div class="medrow"><span class="mn" style="color:var(--amber)">BMI 31.4 (↑ from 28.1)</span><span class="flag a">Cardiometabolic</span></div>
@@ -499,23 +501,23 @@ function rag(p,t){return p>=t?'g':p>=t-15?'a':'r';}
 const MEDS={
   clozapine:{name:'Clozapine',n:45,dev:false},
   lithium:{name:'Lithium',n:30,dev:false},
-  valproate:{name:'Valproate',n:22,dev:false},
-  benzo:{name:'Benzodiazepines',n:28,dev:false},
+  valproate:{name:'Valproate',n:22,dev:false,pick:false},
+  benzo:{name:'Benzodiazepines',n:28,dev:false,pick:false},
   rispal:{name:'Risperidone / Paliperidone',n:19,dev:false},
   olanzapine:{name:'Olanzapine',n:26,dev:false},
   haloperidol:{name:'Haloperidol',n:12,dev:true},
   quetiapine:{name:'Quetiapine',n:34,dev:true},
-  all:{name:'All high-risk agents',n:186,dev:false}
+  all:{name:'Antipsychotic polypharmacy',n:186,dev:false}
 };
 
 /* ---------------- 6 DOMAINS ---------------- */
 const DOMAINS=[
   {id:'medmon',ic:'⚗',name:'Medication-specific monitoring',illus:false},
   {id:'cardio',ic:'❤',name:'Physical & cardiometabolic',illus:false},
-  {id:'adr',ic:'⚠',name:'Adverse drug reaction risks',illus:'partial'},
-  {id:'clinical',ic:'🩺',name:'Clinical profile',illus:true},
-  {id:'social',ic:'👥',name:'Social profile',illus:true},
-  {id:'medmgmt',ic:'📋',name:'Medication management',illus:true}
+  {id:'adr',ic:'⚠',name:'Adverse drug reaction risks',illus:false},
+  {id:'clinical',ic:'🩺',name:'Clinical profile',illus:false},
+  {id:'social',ic:'👥',name:'Social profile',illus:false},
+  {id:'medmgmt',ic:'📋',name:'Medication management',illus:false}
 ];
 
 /* ---------------- INDICATOR DEFINITIONS (hover tooltips) ---------------- */
@@ -539,7 +541,28 @@ const INDDEF={
   'Weight in last 7 days':'<b>Purpose:</b> metabolic monitoring. <b>Num:</b> pts with weight in last 7 days. 3–5% change from admission flags metformin review.',
   'Lipids within 12 months':'<b>Purpose:</b> metabolic monitoring. <b>Num:</b> pts with lipid profile in last 12 months. <b>Denom:</b> all on antipsychotic.',
   'Glucose / HbA1c within 12 months':'<b>Purpose:</b> dysglycaemia screening. <b>Cut-off:</b> HbA1c >6.5%. <b>Source:</b> laboratory.',
-  'ECG / QTc reviewed':'<b>Purpose:</b> QT-prolongation risk. <b>Cut-off:</b> QTc >450 ms; HR <60 bpm. <b>Source:</b> cardiology.'
+  'ECG / QTc reviewed':'<b>Purpose:</b> QT-prolongation risk. <b>Cut-off:</b> QTc >450 ms; HR <60 bpm. <b>Source:</b> cardiology.',
+  'EPSE assessment completed':'<b>Purpose:</b> extrapyramidal side-effect monitoring. <b>Num:</b> antipsychotic pts with a completed EPSE assessment. <b>Denom:</b> all on antipsychotics. <b>Source:</b> EMR.',
+  'Anticholinergic burden (ACB) assessed':'<b>Purpose:</b> anticholinergic-burden monitoring. <b>Num:</b> pts with ACB score recorded. <b>Bands:</b> 0–1 low · 2 moderate · ≥3 high. <b>Denom:</b> all on antipsychotics.',
+  'High-dose benzodiazepine (≤80 mg diazepam-eq)':'<b>Purpose:</b> avoid high-dose benzodiazepines. <b>Cut-off:</b> >80 mg diazepam-eq (>12 mg lorazepam) = high-dose. <b>Source:</b> medication orders.',
+  'Long-term benzodiazepine (≤3 wks)':'<b>Purpose:</b> avoid long-term benzodiazepines. <b>Cut-off:</b> regular order >3 weeks = long-term.',
+  'Valproate toxicity screen (albumin+ammonia)':'<b>Purpose:</b> valproate toxicity risk. <b>Cut-off:</b> albumin <35 g/L or ammonia >47 µmol/L. <b>Source:</b> laboratory.',
+  'Renal function tested (eGFR)':'<b>Purpose:</b> dosing & safety. <b>Num:</b> pts with an eGFR result. <b>Bands:</b> ≥90 / 60–89 / <60 mL/min. <b>Source:</b> laboratory.',
+  'Liver function tested (LFT)':'<b>Purpose:</b> monitor for liver injury. <b>Elements:</b> ALT, AST, ALP, GGT, bilirubin, albumin. <b>Flags:</b> Review (>2× ULN) · Urgent (>5× ULN). <b>Source:</b> laboratory.',
+  'Falls risk assessed':'<b>Purpose:</b> falls prevention. <b>Num:</b> pts with a completed falls-risk assessment (QLD Health tool). <b>Denom:</b> all on antipsychotics.',
+  'Comorbidities (diabetes/CVD) documented':'<b>Purpose:</b> flag key comorbidities affecting antipsychotic safety. <b>Num:</b> pts with documented diabetes or cardiovascular disease. <b>Source:</b> diagnosis / PMH / medications proxy.',
+  'Pregnancy / reproductive status (♀)':'<b>Purpose:</b> ADR / teratogenicity monitoring. <b>Groups:</b> active pregnancy · reproductive age 15–49 · outside 15–49. <b>Source:</b> diagnosis / lab.',
+  'Smoking status recorded':'<b>Purpose:</b> supports clozapine & olanzapine dosing (smoking induces metabolism). <b>Num:</b> pts with current smoking status documented.',
+  'Preferred language / interpreter need flagged':'<b>Purpose:</b> informed communication. <b>Num:</b> pts with preferred language / interpreter need documented. <b>Source:</b> EMR.',
+  'Interpreter provided where required':'<b>Purpose:</b> informed communication. <b>Num:</b> pts who required an interpreter and received interpreter support. <b>Source:</b> EMR.',
+  'Housing status documented':'<b>Purpose:</b> continuity of care. <b>Num:</b> pts with housing / no-fixed-address status documented during admission.',
+  'Disability status documented':'<b>Purpose:</b> continuity of care. <b>Num:</b> pts with identified disability / support needs documented.',
+  'Best possible medication history (BPMH)':'<b>Purpose:</b> medication reconciliation. <b>Num:</b> pts with a completed BPMH. <b>Source:</b> EMR.',
+  'Pharmacist clinical review':'<b>Purpose:</b> pharmacist review. <b>Num:</b> pts with a documented pharmacist intervention/review. <b>Source:</b> EMR.',
+  'PRN antipsychotic documentation compliance':'<b>Purpose:</b> medicine-safety monitoring. <b>Num:</b> PRN antipsychotic administrations with complete documentation (indication, non-pharmacological attempt, effectiveness, side-effects). <b>Denom:</b> all PRN antipsychotic doses.',
+  'Discharge medication plan documented':'<b>Purpose:</b> continuity of care. <b>Num:</b> discharge-ready pts with a documented discharge medication plan (final list, changes & reasons, monitoring/follow-up, supply, counselling).',
+  'Antipsychotic polypharmacy':'<b>Purpose:</b> flag high-risk combinations. <b>Num:</b> unique inpatients on ≥2 regular antipsychotics. <b>Denom:</b> all inpatients on antipsychotics.',
+  'High antipsychotic dose (CPZE)':'<b>Purpose:</b> total antipsychotic burden. <b>Cut-off:</b> >1000 mg chlorpromazine-equivalents/day (CPZE). <b>Source:</b> medication charts (chlorpromazineR conversion).'
 };
 function tipFor(nm,illus){return INDDEF[nm]||(illus?'<b>Illustrative indicator</b> — full definition (purpose / numerator / denominator / cut-off) pending clinical sign-off via the working group.':'');}
 
@@ -556,7 +579,7 @@ let stewBuilt=false;
 function renderStewardship(){
   document.getElementById('stew-kpis').innerHTML=`
     <div class="card kpi a-edge"><div class="label">Antipsychotic polypharmacy</div><div class="val">22%</div><div class="meta">≥2 regular APs · target <20%</div><div class="railbar"><i style="width:73%;background:var(--amber)"></i></div></div>
-    <div class="card kpi a-edge"><div class="label">High-dose prescribing</div><div class="val">12%</div><div class="meta">>100% recommended max · target <10%</div><div class="railbar"><i style="width:60%;background:var(--amber)"></i></div></div>
+    <div class="card kpi a-edge"><div class="label">High-dose prescribing</div><div class="val">12%</div><div class="meta">>1000 mg CPZE/day · target <10%</div><div class="railbar"><i style="width:60%;background:var(--amber)"></i></div></div>
     <div class="card kpi r-edge"><div class="label">Three or more antipsychotics</div><div class="val">4%</div><div class="meta">rarely justified · review each</div><div class="railbar"><i style="width:40%;background:var(--red)"></i></div></div>
     <div class="card kpi b-edge"><div class="label">Anticholinergic (benztropine) co-Rx</div><div class="val">15%</div><div class="meta">EPSE management · review need</div><div class="railbar"><i style="width:50%;background:var(--primary)"></i></div></div>`;
   if(stewBuilt)return;stewBuilt=true;
@@ -567,9 +590,9 @@ function renderStewardship(){
       {label:'3+ antipsychotics',data:[8,10,2,5,2],backgroundColor:RAG.red,stack:'s'}]},
     options:{indexAxis:'y',plugins:{legend:{position:'bottom'}},scales:{x:{stacked:true,grid:gridLine,max:100,ticks:{callback:v=>v+'%'}},y:{stacked:true,grid:noGrid}}}});
   charts['stew-dose']=new Chart(document.getElementById('stew-dose'),{type:'bar',
-    data:{labels:['<50%','50–75%','75–100%','100–150%','>150%'],datasets:[{data:[30,42,58,22,6],
+    data:{labels:['<300','300–600','600–1000','1000–1500','>1500'],datasets:[{data:[30,42,58,22,6],
       backgroundColor:['#bcd4ee','#7eb3e6',RAG.accent,RAG.amber,RAG.red],borderRadius:3}]},
-    options:{plugins:{legend:{display:false}},scales:{x:{grid:noGrid,title:{display:true,text:'% of recommended maximum dose'}},y:{grid:gridLine,title:{display:true,text:'patients'}}}}});
+    options:{plugins:{legend:{display:false}},scales:{x:{grid:noGrid,title:{display:true,text:'chlorpromazine equivalents (mg/day) · >1000 = high-dose'}},y:{grid:gridLine,title:{display:true,text:'patients'}}}}});
   charts['stew-ward']=new Chart(document.getElementById('stew-ward'),{type:'bar',
     data:{labels:['Acute A','Acute B','PICU','Older Adult','Rehab'],datasets:[
       {label:'Polypharmacy %',data:[20,25,30,15,18],backgroundColor:RAG.accent},
@@ -594,13 +617,16 @@ function govData(med){
     ['Lipids within 12 months',68,85,null],['Glucose / HbA1c within 12 months',64,85,'14% HbA1c >6.5%'],
     ['ECG / QTc reviewed',88,85,'6% QTc >450 ms'],['Prolactin measured',71,85,null]];
   const adr=[['Constipation chart + aperient (CIGH)',67,90,'clozapine cohort'],
-    ['Anticholinergic burden assessed',54,80,null,true],['EPSE screening documented',61,80,null,true]];
-  const clinical=[['Relevant comorbidities documented',86,90,null,true],
-    ['Renal / hepatic risk flagged',79,85,null,true],['Pregnancy status (where applicable)',72,90,null,true]];
-  const social=[['Smoking status recorded',90,90,null],['Interpreter need flagged',76,85,null,true],
-    ['Housing / living situation documented',62,80,null,true]];
-  const medmgmt=[['Medicines info in ED summary',70,85,null,true],
-    ['Medicines info in discharge summary',64,85,null,true],['Discharge medication list provided',72,90,null,true]];
+    ['EPSE assessment completed',61,80,null],['Anticholinergic burden (ACB) assessed',54,80,null],
+    ['High-dose benzodiazepine (≤80 mg diazepam-eq)',86,90,'4 high-dose'],['Long-term benzodiazepine (≤3 wks)',79,90,'6 >3 weeks'],
+    ['Valproate toxicity screen (albumin+ammonia)',63,90,'2 flagged']];
+  const clinical=[['Renal function tested (eGFR)',84,90,'5 with eGFR <60'],['Liver function tested (LFT)',79,85,'2 urgent LFT'],
+    ['Falls risk assessed',88,90,'11 high falls risk'],['Comorbidities (diabetes/CVD) documented',86,90,null],
+    ['Pregnancy / reproductive status (♀)',72,90,null]];
+  const social=[['Smoking status recorded',90,90,null],['Preferred language / interpreter need flagged',76,85,null],
+    ['Interpreter provided where required',70,85,null],['Housing status documented',62,80,null],['Disability status documented',65,80,null]];
+  const medmgmt=[['Best possible medication history (BPMH)',82,90,null],['Pharmacist clinical review',74,90,null],
+    ['PRN antipsychotic documentation compliance',68,85,null],['Discharge medication plan documented',64,85,null]];
   const M={
     clozapine:[['FBC — green category',96,98,'1 amber result'],['Clozapine level available',78,90,null],
       ['TDM in range 350–1000 ng/mL',71,85,'3 patients >1000'],['Myocarditis CRP+Tn (wks 1–4)',82,100,'2 with CRP >5'],
@@ -626,7 +652,7 @@ function govData(med){
 function stageSchedule(med){
   if(med==='clozapine')return {cols:['FBC (haematological)','Myocarditis CRP/Tn','Metabolic panel','Clozapine TDM','Constipation (CIGH)'],rows:[
     ['Initiation (wk 1–4)',[['Weekly','on'],['Weekly','on'],['Baseline','on'],['If indicated','opt'],['Daily chart','on']]],
-    ['Stabilisation (wk 5–18)',[['Weekly→fortnightly','on'],['If symptomatic','opt'],['At 12 weeks','on'],['If indicated','opt'],['Ongoing chart','on']]],
+    ['Stabilisation (wk 5–18)',[['Weekly','on'],['If symptomatic','opt'],['At 12 weeks','on'],['If indicated','opt'],['Ongoing chart','on']]],
     ['Maintenance (>18 wk)',[['Monthly','on'],['Not routine','off'],['Annually','on'],['If indicated','opt'],['As needed','opt']]]]};
   if(med==='lithium')return {cols:['Serum lithium level','Renal (eGFR)','Thyroid (TFT)','Metabolic panel','Calcium'],rows:[
     ['Initiation',[['After each dose change','on'],['Baseline','on'],['Baseline','on'],['Baseline','on'],['Baseline','opt']]],
@@ -645,18 +671,18 @@ function stageSchedule(med){
 /* ---------------- PATIENTS (clinician daily) ---------------- */
 /* status per domain: g/a/r/n ; order [medmon,cardio,adr,clinical,social,medmgmt] */
 const PATIENTS=[
-  {id:'JD',name:'J.D.',ward:'PICU',mha:'Sec 3',st:'init',s:['r','a','a','g','g','a'],out:['CRP>5 review','Bowel chart','ECG'],age:52,sex:'Male',dx:'Schizophrenia',los:18},
-  {id:'SS',name:'S.S.',ward:'Acute A',mha:'Informal',st:'init',s:['a','a','g','g','a','g'],out:['Cloz titration','Weight, BP'],age:34,sex:'Female',dx:'Schizoaffective',los:6},
-  {id:'MR',name:'M.R.',ward:'Acute A',mha:'Sec 3',st:'maint',s:['r','g','g','a','g','g'],out:['Lithium 1.3 — review','eGFR↓'],age:61,sex:'Male',dx:'Bipolar',los:11},
-  {id:'LP',name:'L.P.',ward:'Acute B',mha:'Sec 3',st:'stab',s:['r','a','g','g','a','a'],out:['VPA ammonia↑','♀ contraception'],age:29,sex:'Female',dx:'Bipolar',los:9},
-  {id:'NF',name:'N.F.',ward:'PICU',mha:'Sec 3',st:'maint',s:['a','r','a','g','g','g'],out:['Prolactin>1000','Lipids overdue'],age:44,sex:'Male',dx:'Schizophrenia',los:21},
-  {id:'TK',name:'T.K.',ward:'Older Adult',mha:'Informal',st:'maint',s:['n','a','r','r','a','a'],out:['Long-term benzo','Falls risk review'],age:73,sex:'Female',dx:'BPSD',los:14},
-  {id:'BG',name:'B.G.',ward:'Acute B',mha:'Sec 2',st:'init',s:['a','a','g','g','a','r'],out:['Med rec','Discharge info'],age:38,sex:'Male',dx:'First episode psychosis',los:2},
-  {id:'AB',name:'A.B.',ward:'Rehab',mha:'CTO',st:'maint',s:['g','g','g','g','g','a'],out:['LAI due today'],age:47,sex:'Male',dx:'Schizophrenia',los:40},
-  {id:'CH',name:'C.H.',ward:'Acute A',mha:'Sec 3',st:'maint',s:['g','e','a','g','r','a'],out:['Glucose (community — verify)','Housing — social work'],age:55,sex:'Female',dx:'Schizoaffective',los:7},
-  {id:'PT',name:'P.T.',ward:'PICU',mha:'Sec 3',st:'stab',s:['r','a','g','a','g','g'],out:['Cloz level <350','Repeat FBC'],age:41,sex:'Male',dx:'Treatment-resistant schiz.',los:16},
-  {id:'EW',name:'E.W.',ward:'Older Adult',mha:'Informal',st:'stab',s:['a','r','a','r','g','a'],out:['QTc 462 ms','Comorbidity review'],age:68,sex:'Female',dx:'Psychotic depression',los:10},
-  {id:'RJ',name:'R.J.',ward:'Acute B',mha:'Sec 2',st:'init',s:['g','a','g','g','a','g'],out:['Weight 7-day due'],age:31,sex:'Male',dx:'Mania',los:4}
+  {id:'JD',name:'J.D.',ward:'PICU',mha:'TA',st:'init',s:['r','a','a','g','g','a'],out:['CRP>5 review','Bowel chart','ECG'],age:52,sex:'Male',dx:'Schizophrenia',los:18},
+  {id:'SS',name:'S.S.',ward:'Acute A',mha:'Voluntary',st:'init',s:['a','a','g','g','a','g'],out:['Cloz titration','Weight, BP'],age:34,sex:'Female',dx:'Schizoaffective',los:6},
+  {id:'MR',name:'M.R.',ward:'Acute A',mha:'TA',st:'maint',s:['r','g','g','a','g','g'],out:['Lithium 1.3 — review','eGFR↓'],age:61,sex:'Male',dx:'Bipolar',los:11},
+  {id:'LP',name:'L.P.',ward:'Acute B',mha:'TA',st:'stab',s:['r','a','g','g','a','a'],out:['VPA ammonia↑','♀ contraception'],age:29,sex:'Female',dx:'Bipolar',los:9},
+  {id:'NF',name:'N.F.',ward:'PICU',mha:'TA',st:'maint',s:['a','r','a','g','g','g'],out:['Prolactin>1000','Lipids overdue'],age:44,sex:'Male',dx:'Schizophrenia',los:21},
+  {id:'TK',name:'T.K.',ward:'Older Adult',mha:'Voluntary',st:'maint',s:['n','a','r','r','a','a'],out:['Long-term benzo','Falls risk review'],age:73,sex:'Female',dx:'BPSD',los:14},
+  {id:'BG',name:'B.G.',ward:'Acute B',mha:'TSO',st:'init',s:['a','a','g','g','a','r'],out:['Med rec','Discharge info'],age:38,sex:'Male',dx:'First episode psychosis',los:2},
+  {id:'AB',name:'A.B.',ward:'Rehab',mha:'TSO',st:'maint',s:['g','g','g','g','g','a'],out:['LAI due today'],age:47,sex:'Male',dx:'Schizophrenia',los:40},
+  {id:'CH',name:'C.H.',ward:'Acute A',mha:'FO',st:'maint',s:['g','e','a','g','r','a'],out:['Glucose (community — verify)','Housing — social work'],age:55,sex:'Female',dx:'Schizoaffective',los:7},
+  {id:'PT',name:'P.T.',ward:'PICU',mha:'TA',st:'stab',s:['r','a','g','a','g','g'],out:['Cloz level <350','Repeat FBC'],age:41,sex:'Male',dx:'Treatment-resistant schiz.',los:16},
+  {id:'EW',name:'E.W.',ward:'Older Adult',mha:'Voluntary',st:'stab',s:['a','r','a','r','g','a'],out:['QTc 462 ms','Comorbidity review'],age:68,sex:'Female',dx:'Psychotic depression',los:10},
+  {id:'RJ',name:'R.J.',ward:'Acute B',mha:'TA',st:'init',s:['g','a','g','g','a','g'],out:['Weight 7-day due'],age:31,sex:'Male',dx:'Mania',los:4}
 ];
 const DOMNAMES=['Med-specific','Cardiometabolic','ADR risks','Clinical','Social','Med management'];
 const STAGE_LABEL={init:'Initiation',stab:'Stabilising',maint:'Maintenance'};
@@ -681,12 +707,12 @@ function setMed(m){state.med=m;const M=MEDS[m];
 
 /* ---------------- LANDING ---------------- */
 function buildLanding(){
-  document.getElementById('medgrid').innerHTML=Object.entries(MEDS).map(([k,m])=>`
+  document.getElementById('medgrid').innerHTML=Object.entries(MEDS).filter(([k,m])=>m.pick!==false).map(([k,m])=>`
     <div class="medpick ${k===state.med?'active':''} ${m.dev?'devflag':''}" data-med="${k}">
       <div class="mname">${m.name}</div><div class="mn2">${m.n} patients${m.dev?' · in development':''}</div></div>`).join('');
   document.getElementById('domstrip').innerHTML=DOMAINS.map(d=>`
     <div class="dchip">${d.ic} ${d.name}${d.illus===true?' <span class="badge-illus">illustrative</span>':d.illus==='partial'?' <span class="badge-illus">partial</span>':''}</div>`).join('');
-  document.getElementById('medgrid').addEventListener('click',e=>{const c=e.target.closest('.medpick');if(c)setMed(c.dataset.med);});
+  document.getElementById('medgrid').addEventListener('click',e=>{const c=e.target.closest('.medpick');if(!c)return;const m=c.dataset.med;setMed(m);if(m==='all')show('stewardship');});
   document.querySelectorAll('.vcard').forEach(v=>v.addEventListener('click',()=>show(v.dataset.go)));
 }
 
@@ -721,15 +747,15 @@ function renderClinician(){
   const clr=document.getElementById('clin-clear');if(clr)clr.addEventListener('click',()=>{state.clin=null;renderClinician();});
   // alerts (med-aware)
   const A={
-    clozapine:[['r','🩸','Myocarditis risk','CRP >5.0 mg/L in titration wks 1–4',2],['r','⚗','TDM out of range','<350 (sub) or >1000 (toxic) ng/mL',3],['a','💩','CIGH risk','Bowel chart incomplete / no aperient',5]],
+    clozapine:[['r','🩸','Myocarditis risk','CRP >5.0 mg/L in titration wks 1–4',2],['r','⚗','TDM out of range','<350 (sub) or >1000 (toxic) ng/mL',3],['r','⬆','High antipsychotic dose','>1000 mg chlorpromazine-equivalents/day (CPZE)',2],['a','💊','No metformin co-prescription','Newly started clozapine without metformin',3],['a','💩','CIGH risk','Bowel chart incomplete / no aperient',5]],
     lithium:[['r','⚖','Level out of range','>1.0 or <0.4 mmol/L',4],['a','🫘','Renal decline','eGFR 30–59 mL/min',2],['a','🦋','TFT abnormal','FT4 out of range',3]],
     valproate:[['r','🧪','Toxicity risk','Albumin <35 g/L or ammonia >47 µmol/L',2],['a','♀','Contraception gap','Female <50, none charted',2],['a','⚗','Supratherapeutic','Level >100',3]],
     benzo:[['r','💊','Long-term use','Regular order >3 weeks',6],['a','⬆','High dose','>80 mg diazepam-equivalents',4]],
     rispal:[['r','📈','Hyperprolactinaemia','Prolactin >1000 mU/L',4],['a','❤','Metabolic overdue','Lipids / glucose >12 mo',5]],
-    olanzapine:[['a','⚖','Weight gain','≥3–5% from admission',8],['a','💊','Metformin gap','Indicated but not co-prescribed',6]],
-    haloperidol:[['a','📉','QTc prolongation','QTc >450 ms',2]],
+    olanzapine:[['r','⬆','High antipsychotic dose','>1000 mg chlorpromazine-equivalents/day (CPZE)',2],['a','💊','No metformin co-prescription','Newly started olanzapine without metformin',6],['a','⚖','Weight gain','≥3–5% from admission',8]],
+    haloperidol:[['a','📉','QTc prolongation','QTc >450 ms',2],['r','⬆','High antipsychotic dose','>1000 mg CPZE/day',1]],
     quetiapine:[['a','◷','In development','Indicators awaiting definition',0]],
-    all:[['r','⚗','TDM out of range','Across high-risk agents',12],['a','❤','Metabolic overdue','Bundle incomplete',23]]
+    all:[['r','⬆','High antipsychotic dose','>1000 mg chlorpromazine-equivalents/day (CPZE)',9],['r','⚗','TDM out of range','Across high-risk agents',12],['a','💊','No metformin co-prescription','Newly started clozapine/olanzapine',14],['a','❤','Metabolic overdue','Bundle incomplete',23]]
   };
   document.getElementById('clin-alerts').innerHTML=(A[state.med]||A.all).map(x=>`
     <div style="display:flex;gap:10px;padding:9px 11px;border-radius:7px;border:1px solid var(--line);margin-bottom:8px;border-left:4px solid ${x[0]==='r'?RAG.red:RAG.amber}">
@@ -757,7 +783,7 @@ function renderGovernance(){
     data:{labels:['Jan','Feb','Mar','Apr','May','Jun'],datasets:[
       {label:'Medication-specific',data:[55,57,59,58,61,overall],borderColor:RAG.blue,backgroundColor:'rgba(44,111,187,.12)',fill:true,tension:.35,pointRadius:3,borderWidth:2},
       {label:'Cardiometabolic',data:[60,61,63,62,64,66],borderColor:RAG.amber,backgroundColor:'transparent',tension:.35,pointRadius:3,borderWidth:2}]},
-    options:{plugins:{legend:{position:'bottom'}},scales:{x:{grid:noGrid},y:{grid:gridLine,max:100,ticks:{callback:v=>v+'%'}}}}});
+    options:{plugins:{legend:{position:'bottom'}},scales:{x:{grid:noGrid},y:{grid:gridLine,min:0,max:100,ticks:{callback:v=>v+'%'}}}}});
   // ward
   destroy('gov-ward');
   charts['gov-ward']=new Chart(document.getElementById('gov-ward'),{type:'bar',
@@ -798,7 +824,7 @@ function renderGovernance(){
     options:{plugins:{legend:{position:'bottom'}},scales:{x:{grid:noGrid},y:{grid:gridLine,title:{display:true,text:'sedative load'}},y1:{position:'right',grid:noGrid,title:{display:true,text:'falls /1000'}}}}});
   document.getElementById('gov-falls-note').innerHTML='Falls peaked in April alongside the highest sedative-load index — a candidate link worth reviewing. Outcome measures like this address the Donabedian outcome gap identified in the scoping review.';
   // domain panels (worst-performing first, with hover definitions)
-  document.getElementById('gov-domains').innerHTML=DOMAINS.map(dom=>{
+  document.getElementById('gov-domains').innerHTML=DOMAINS.map((dom,di)=>{
     const rows=[...(d[dom.id]||[])].sort((a,b)=>{const ga=a[1]===null?-1:a[2]-a[1],gb=b[1]===null?-1:b[2]-b[1];return gb-ga;});
     const body=rows.map(r=>{
       const [nm,pct,tgt,out,illus]=r;
@@ -807,9 +833,9 @@ function renderGovernance(){
       const c=col(pct,tgt);
       return `<div class="bullet"><div class="blab"><span class="nm">${nm}${illus===true?' <span class="badge-illus">illus</span>':''}${ic}</span><span class="vv" style="color:${c}">${pct}%</span></div>
         <div class="track"><i style="width:${pct}%;background:${c}"></i><div class="tgt" style="left:${tgt}%"></div></div>
-        ${out?`<div class="outside">▲ ${out}</div>`:''}</div>`;}).join('');
+        ${out?`<div class="outside gflag" data-di="${di}" title="Click to see these patients">▲ ${out} ›</div>`:''}</div>`;}).join('');
     const badge=dom.illus===true?'<span class="badge-illus">illustrative</span>':dom.illus==='partial'?'<span class="badge-illus">partial</span>':'';
-    return `<div class="card" data-illus="${dom.illus===true?1:0}"><div class="card-head"><div><h3>${dom.ic} ${dom.name} ${badge}</h3><div class="csub">% of eligible cohort · worst-performing first · target line = service goal</div></div></div>${body||'<div class="note">No indicators defined yet.</div>'}</div>`;}).join('');
+    return `<div class="card" data-sec="${['clinical','social','medmgmt'].includes(dom.id)?1:0}"><div class="card-head"><div><h3>${dom.ic} ${dom.name} ${badge}</h3><div class="csub">% of eligible cohort · worst-performing first · click a ▲ flag to see the patients</div></div></div>${body||'<div class="note">No indicators defined yet.</div>'}</div>`;}).join('');
   applyDomMode();
   const ins={
     clozapine:'CIGH constipation surveillance (67%) and clozapine TDM in-range (71%) are the priorities; 3 patients exceed 1000 ng/mL and 2 have CRP >5 in the titration window.',
@@ -838,14 +864,14 @@ function buildP360(){
   if(p360charts)return;p360charts=true;
   // change-since-admission cards (clinicians favour change metrics)
   const chg=[
-    ['Weight','96 kg','+10 kg','up','from 86 kg'],
-    ['BMI','31.4','+3.3','up','from 28.1'],
-    ['CRP','7.2 mg/L','+5.1','up','from 2.1'],
-    ['QTc','447 ms','+27 ms','up','from 420'],
-    ['Clozapine level','470 ng/mL','→ in range','down','from 280']];
+    ['Weight','96 kg','+10 kg','up','from adm 86 kg','vs prev adm 92 kg (+4)'],
+    ['BMI','31.4','+3.3','up','from adm 28.1','vs prev adm 30.1 (+1.3)'],
+    ['CRP','7.2 mg/L','+5.1','up','from adm 2.1','vs prev adm 3.0 (+4.2)'],
+    ['QTc','447 ms','+27 ms','up','from adm 420','vs prev adm 438 (+9)'],
+    ['Clozapine level','470 ng/mL','→ in range','down','from adm 280','vs prev adm 300']];
   document.getElementById('p-changegrid').innerHTML=chg.map(c=>`
     <div class="chg"><div class="cl">${c[0]}</div><div class="cnow">${c[1]}</div>
-    <div class="cdelta ${c[3]}">${c[3]==='up'?'▲ ':c[3]==='down'?'▼ ':''}${c[2]}</div><div class="cbase">${c[4]}</div></div>`).join('');
+    <div class="cdelta ${c[3]}">${c[3]==='up'?'▲ ':c[3]==='down'?'▼ ':''}${c[2]}</div><div class="cbase">${c[4]}</div><div class="cbase" style="color:var(--primary)">${c[5]}</div></div>`).join('');
   // metabolic % change from admission (replaces radar — easier to read)
   charts['p-change']=new Chart(document.getElementById('p-change'),{type:'bar',
     data:{labels:['Triglycerides','Fasting glucose','Cholesterol','BMI','Systolic BP','Waist'],
@@ -886,7 +912,7 @@ const META={
 };
 const built={};
 let domMode='core';
-function applyDomMode(){document.querySelectorAll('#gov-domains .card[data-illus="1"]').forEach(c=>c.classList.toggle('collapsed-dom',domMode==='core'));}
+function applyDomMode(){document.querySelectorAll('#gov-domains .card[data-sec="1"]').forEach(c=>c.classList.toggle('collapsed-dom',domMode==='core'));}
 function show(view){
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active',n.dataset.view===view));
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
@@ -901,8 +927,9 @@ function show(view){
   window.scrollTo(0,0);
 }
 document.getElementById('nav').addEventListener('click',e=>{const it=e.target.closest('.nav-item');if(it)show(it.dataset.view);});
-document.getElementById('med-select').addEventListener('change',e=>setMed(e.target.value));
+document.getElementById('med-select').addEventListener('change',e=>{setMed(e.target.value);if(e.target.value==='all')show('stewardship');});
 document.getElementById('clin-domsum').addEventListener('click',e=>{const c=e.target.closest('.domcard');if(!c)return;const i=+c.dataset.di;state.clin=(state.clin===i?null:i);renderClinician();});
+document.getElementById('gov-domains').addEventListener('click',e=>{const f=e.target.closest('.gflag');if(!f)return;state.clin=+f.dataset.di;show('clinician');});
 document.getElementById('dom-toggle').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;domMode=b.dataset.mode;document.querySelectorAll('#dom-toggle button').forEach(x=>x.classList.remove('on'));b.classList.add('on');applyDomMode();});
 document.getElementById('p-toggle').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;document.querySelectorAll('#p-toggle button').forEach(x=>x.classList.remove('on'));b.classList.add('on');document.getElementById('p-detail').classList.toggle('change-mode',b.dataset.mode==='change');setTimeout(()=>Object.values(charts).forEach(c=>{try{c.resize();}catch(e){}}),20);});
 
