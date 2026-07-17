@@ -128,11 +128,15 @@
   .qc .qv{font-size:24px;font-weight:700}.qc .ql{font-size:9.5px;color:var(--muted);margin-top:2px;line-height:1.3}
   .qc.ok{background:var(--green-bg)}.qc.warn{background:var(--amber-bg)}.qc.bad{background:var(--red-bg)}.qc.mid{background:#f4f6f9}
 
-  .tablewrap{overflow-x:auto;width:100%}
+  .tablewrap{overflow:auto;width:100%;max-height:560px}
   table.dt{width:100%;border-collapse:collapse;font-size:11.5px}
   #clin-table{min-width:680px}
+  #clin-table thead th{position:sticky;top:0;background:var(--panel);z-index:1}
   .cmi{font-size:9.5px;font-weight:700;color:var(--primary);text-decoration:none;border:1px solid var(--primary-soft);background:var(--primary-soft);padding:1px 6px;border-radius:5px;margin-left:6px;white-space:nowrap}
   .cmi:hover{background:var(--primary);color:#fff}
+  .agt{font-size:10px;color:var(--primary);font-weight:600}
+  .alertbox[data-key]:hover{background:#f3f8fd;border-radius:7px}
+  .alertbox.on>div{outline:2px solid var(--primary);outline-offset:-1px}
   .outside.gflag{cursor:pointer;text-decoration:underline dotted}
   .outside.gflag:hover{filter:brightness(.85)}
   table.dt th{text-align:left;color:var(--muted);font-weight:700;font-size:10px;text-transform:uppercase;letter-spacing:.4px;padding:7px 9px;border-bottom:1.5px solid var(--line)}
@@ -345,7 +349,8 @@
         <div class="domsum" id="clin-domsum"></div>
         <div class="grid g-23" style="margin-bottom:14px">
           <div class="card">
-            <div class="card-head"><div><h3>Patients needing action today</h3><div class="csub" id="clin-listsub">Current inpatients · RAG status by domain · click a row for full patient detail</div></div></div>
+            <div class="card-head"><div><h3>Patients needing action today</h3><div class="csub" id="clin-listsub">Current inpatients · RAG status by domain · click a row for full patient detail</div></div>
+              <div class="toggle" id="action-toggle"><button data-mode="all" class="on">All patients</button><button data-mode="needs">Needs action</button></div></div>
             <div class="tablewrap"><table class="dt" id="clin-table"></table></div>
             <div class="legend-rag"><span><span class="dot g"></span>up to date (ieMR)</span><span><span class="dot a"></span>due / review</span><span><span class="dot r"></span>action / abnormal</span><span><span class="dot e"></span>external / verify</span><span><span class="dot n"></span>not applicable at this stage</span></div>
           </div>
@@ -448,16 +453,10 @@
 
           <div class="grid g-23" style="margin-bottom:14px">
             <div class="card">
-              <div class="card-head"><div><h3>Active medicines &amp; alerts</h3><div class="csub">High-risk agents under QI monitoring</div></div></div>
-              <div class="medrow"><span class="mn">Clozapine 300 mg nocte <a class="cmi" href="https://www.healthdirect.gov.au/medicines/medicinal-product/aht,20654/clozapine" target="_blank" rel="noopener">CMI ↗</a></span><span class="flag b">Titration day 9</span></div>
-              <div class="medrow"><span class="mn">Metformin 500 mg BD <a class="cmi" href="https://www.healthdirect.gov.au/medicines/medicinal-product/aht,20727/" target="_blank" rel="noopener">CMI ↗</a></span><span class="flag g">Metabolic cover</span></div>
-              <div class="medrow"><span class="mn">Aripiprazole 10 mg daily <a class="cmi" href="https://www.healthdirect.gov.au/medicines/medicinal-product/aht,20233/aripiprazole" target="_blank" rel="noopener">CMI ↗</a></span><span class="flag a">Polypharmacy (2 AP)</span></div>
-              <div class="medrow"><span class="mn">Diazepam 5 mg PRN <a class="cmi" href="https://www.healthdirect.gov.au/medicines/medicinal-product/aht,20759" target="_blank" rel="noopener">CMI ↗</a></span><span class="flag b">PRN</span></div>
-              <div style="margin-top:12px"><h3 style="font-size:12px">Active alerts (by domain)</h3></div>
-              <div class="medrow"><span class="mn" style="color:var(--red)">CRP 7.2 mg/L (&gt;5.0)</span><span class="flag r">Med-specific · myocarditis</span></div>
-              <div class="medrow"><span class="mn" style="color:var(--amber)">BMI 31.4 (↑ from 28.1)</span><span class="flag a">Cardiometabolic</span></div>
-              <div class="medrow"><span class="mn" style="color:var(--amber)">Bowel chart incomplete 3 d</span><span class="flag a">ADR · CIGH</span></div>
-              <div class="medrow"><span class="mn">Smoker · interpreter: nil</span><span class="flag b">Social profile</span></div>
+              <div class="card-head"><div><h3>Active medicines &amp; alerts</h3><div class="csub">Current regime · medicine-info links open SA Health &amp; QH resources</div></div></div>
+              <div id="p-meds"></div>
+              <div style="margin-top:12px"><h3 style="font-size:12px">Outstanding / alerts</h3></div>
+              <div id="p-alerts"></div>
             </div>
             <div class="card">
               <div class="card-head"><div><h3>Metabolic change from admission</h3><div class="csub">% change per metric · increase (red) = worsening cardiometabolic risk</div></div></div>
@@ -671,21 +670,78 @@ function stageSchedule(med){
 /* ---------------- PATIENTS (clinician daily) ---------------- */
 /* status per domain: g/a/r/n ; order [medmon,cardio,adr,clinical,social,medmgmt] */
 const PATIENTS=[
-  {id:'JD',name:'J.D.',ward:'PICU',mha:'TA',st:'init',s:['r','a','a','g','g','a'],out:['CRP>5 review','Bowel chart','ECG'],age:52,sex:'Male',dx:'Schizophrenia',los:18},
-  {id:'SS',name:'S.S.',ward:'Acute A',mha:'Voluntary',st:'init',s:['a','a','g','g','a','g'],out:['Cloz titration','Weight, BP'],age:34,sex:'Female',dx:'Schizoaffective',los:6},
-  {id:'MR',name:'M.R.',ward:'Acute A',mha:'TA',st:'maint',s:['r','g','g','a','g','g'],out:['Lithium 1.3 — review','eGFR↓'],age:61,sex:'Male',dx:'Bipolar',los:11},
-  {id:'LP',name:'L.P.',ward:'Acute B',mha:'TA',st:'stab',s:['r','a','g','g','a','a'],out:['VPA ammonia↑','♀ contraception'],age:29,sex:'Female',dx:'Bipolar',los:9},
-  {id:'NF',name:'N.F.',ward:'PICU',mha:'TA',st:'maint',s:['a','r','a','g','g','g'],out:['Prolactin>1000','Lipids overdue'],age:44,sex:'Male',dx:'Schizophrenia',los:21},
-  {id:'TK',name:'T.K.',ward:'Older Adult',mha:'Voluntary',st:'maint',s:['n','a','r','r','a','a'],out:['Long-term benzo','Falls risk review'],age:73,sex:'Female',dx:'BPSD',los:14},
-  {id:'BG',name:'B.G.',ward:'Acute B',mha:'TSO',st:'init',s:['a','a','g','g','a','r'],out:['Med rec','Discharge info'],age:38,sex:'Male',dx:'First episode psychosis',los:2},
-  {id:'AB',name:'A.B.',ward:'Rehab',mha:'TSO',st:'maint',s:['g','g','g','g','g','a'],out:['LAI due today'],age:47,sex:'Male',dx:'Schizophrenia',los:40},
-  {id:'CH',name:'C.H.',ward:'Acute A',mha:'FO',st:'maint',s:['g','e','a','g','r','a'],out:['Glucose (community — verify)','Housing — social work'],age:55,sex:'Female',dx:'Schizoaffective',los:7},
-  {id:'PT',name:'P.T.',ward:'PICU',mha:'TA',st:'stab',s:['r','a','g','a','g','g'],out:['Cloz level <350','Repeat FBC'],age:41,sex:'Male',dx:'Treatment-resistant schiz.',los:16},
-  {id:'EW',name:'E.W.',ward:'Older Adult',mha:'Voluntary',st:'stab',s:['a','r','a','r','g','a'],out:['QTc 462 ms','Comorbidity review'],age:68,sex:'Female',dx:'Psychotic depression',los:10},
-  {id:'RJ',name:'R.J.',ward:'Acute B',mha:'TA',st:'init',s:['g','a','g','g','a','g'],out:['Weight 7-day due'],age:31,sex:'Male',dx:'Mania',los:4}
+  {id:'JD',name:'J.D.',ward:'PICU',mha:'TA',st:'init',meds:['clozapine'],s:['r','a','a','g','g','a'],out:['CRP>5 review','Bowel chart','ECG'],age:52,sex:'Male',dx:'Schizophrenia',los:18,
+    regime:[['Clozapine 300 mg nocte','Titration day 9','b'],['Metformin 500 mg BD','Metabolic cover','g'],['Aripiprazole 10 mg daily','Polypharmacy (2 AP)','a'],['Diazepam 5 mg PRN','PRN','b']]},
+  {id:'SS',name:'S.S.',ward:'Acute A',mha:'Voluntary',st:'init',meds:['clozapine'],s:['a','a','g','g','a','g'],out:['Cloz titration','Weight, BP'],age:34,sex:'Female',dx:'Schizoaffective',los:6,
+    regime:[['Clozapine 200 mg nocte','Titration day 4','b'],['Lorazepam 1 mg PRN','PRN','b']]},
+  {id:'MR',name:'M.R.',ward:'Acute A',mha:'TA',st:'maint',meds:['lithium'],s:['r','g','g','a','g','g'],out:['Lithium 1.3 — review','eGFR↓'],age:61,sex:'Male',dx:'Bipolar',los:11,
+    regime:[['Lithium 450 mg BD','Level 1.3 — review','r'],['Quetiapine 100 mg nocte'],['Perindopril 5 mg daily']]},
+  {id:'LP',name:'L.P.',ward:'Acute B',mha:'TA',st:'stab',meds:['quetiapine','lithium'],s:['r','a','g','g','a','a'],out:['VPA ammonia↑','♀ contraception'],age:29,sex:'Female',dx:'Bipolar',los:9,
+    regime:[['Sodium valproate 1 g BD','Ammonia ↑','r'],['Quetiapine 300 mg nocte'],['Lithium 500 mg nocte']]},
+  {id:'NF',name:'N.F.',ward:'PICU',mha:'TA',st:'maint',meds:['olanzapine'],s:['a','r','a','g','g','g'],out:['Olanzapine — no metformin','Zuclopenthixol LAI due'],age:44,sex:'Male',dx:'Schizophrenia',los:21,
+    regime:[['Olanzapine 10 mg BD','No metformin','a'],['Lorazepam 2 mg TDS'],['Sodium valproate 1 g BD'],['Zuclopenthixol decanoate 400 mg q2wk','LAI due','a'],['Lorazepam 2 mg po/IM PRN','PRN','b'],['Olanzapine IM 10 mg PRN','PRN','b'],['Promethazine PRN','PRN','b']]},
+  {id:'TK',name:'T.K.',ward:'Older Adult',mha:'Voluntary',st:'maint',meds:['quetiapine'],s:['n','a','r','r','a','a'],out:['Long-term benzo','Falls risk review'],age:73,sex:'Female',dx:'BPSD',los:14,
+    regime:[['Quetiapine 50 mg nocte'],['Oxazepam 15 mg TDS','Long-term benzo','a'],['Donepezil 10 mg daily']]},
+  {id:'BG',name:'B.G.',ward:'Acute B',mha:'TSO',st:'init',meds:['olanzapine'],s:['a','a','g','g','a','r'],out:['Med rec','Discharge info'],age:38,sex:'Male',dx:'First episode psychosis',los:2,
+    regime:[['Olanzapine 10 mg nocte'],['Lorazepam 1 mg PRN','PRN','b']]},
+  {id:'AB',name:'A.B.',ward:'Rehab',mha:'TSO',st:'maint',meds:['rispal'],s:['g','g','g','g','g','a'],out:['LAI due today'],age:47,sex:'Male',dx:'Schizophrenia',los:40,
+    regime:[['Paliperidone palmitate 150 mg q4wk','LAI due today','a'],['Sertraline 50 mg daily']]},
+  {id:'CH',name:'C.H.',ward:'Acute A',mha:'FO',st:'maint',meds:['olanzapine','rispal','lithium'],s:['g','e','a','g','r','a'],out:['Glucose (community — verify)','Housing — social work'],age:55,sex:'Female',dx:'Schizoaffective',los:7,
+    regime:[['Lorazepam 2 mg BD'],['Lithium 450 mg BD'],['Olanzapine 10 mg nocte'],['Paliperidone 150 mg q4wk','LAI','b'],['Lorazepam PRN','PRN','b']]},
+  {id:'PT',name:'P.T.',ward:'PICU',mha:'TA',st:'stab',meds:['clozapine'],s:['r','a','g','a','g','g'],out:['Cloz level <350','Repeat FBC'],age:41,sex:'Male',dx:'Treatment-resistant schiz.',los:16,
+    regime:[['Clozapine 450 mg nocte','Level <350 — review','r'],['Metformin 1 g BD'],['Lorazepam 2 mg PRN','PRN','b']]},
+  {id:'EW',name:'E.W.',ward:'Older Adult',mha:'Voluntary',st:'stab',meds:[],s:['a','r','a','r','g','a'],out:['QTc 462 ms','Comorbidity review'],age:68,sex:'Female',dx:'Psychotic depression',los:10,
+    regime:[['Mirtazapine 30 mg nocte'],['Venlafaxine 150 mg daily'],['Oxazepam 15 mg TDS'],['Telmisartan 40 mg daily'],['Atorvastatin 10 mg daily']]},
+  {id:'RJ',name:'R.J.',ward:'Acute B',mha:'TA',st:'init',meds:['olanzapine','haloperidol'],s:['g','a','g','g','a','g'],out:['Weight 7-day due'],age:31,sex:'Male',dx:'Mania',los:4,
+    regime:[['Olanzapine 10 mg nocte'],['Haloperidol 5 mg BD'],['Lorazepam 2 mg PRN','PRN','b']]}
 ];
 const DOMNAMES=['Med-specific','Cardiometabolic','ADR risks','Clinical','Social','Med management'];
 const STAGE_LABEL={init:'Initiation',stab:'Stabilising',maint:'Maintenance'};
+
+/* ---------------- PRIORITY ALERTS (data-driven) ---------------- */
+const ALERTDEF={
+  myocarditis:['r','🩸','Myocarditis risk','CRP >5.0 mg/L in titration wks 1–4'],
+  tdm_oor:['r','⚗','TDM out of range','<350 (sub) or >1000 (toxic) ng/mL'],
+  cpze:['r','⬆','High antipsychotic dose','>1000 mg chlorpromazine-equivalents/day (CPZE)'],
+  no_metformin:['a','💊','No metformin co-prescription','Clozapine/olanzapine without metformin'],
+  cigh:['a','💩','CIGH risk','Bowel chart incomplete / no aperient'],
+  li_oor:['r','⚖','Lithium level out of range','>1.0 or <0.4 mmol/L'],
+  renal:['a','🫘','Renal decline','eGFR 30–59 mL/min'],
+  tft:['a','🦋','TFT abnormal','FT4 out of range'],
+  prolactin:['r','📈','Hyperprolactinaemia','Prolactin >1000 mU/L'],
+  metabolic:['a','❤','Metabolic monitoring overdue','Lipids / glucose >12 months'],
+  weight:['a','⚖','Weight gain','≥3–5% from admission'],
+  qtc:['a','📉','QTc prolongation','QTc >450 ms']
+};
+const MEDALERTS={
+  clozapine:['myocarditis','tdm_oor','cpze','no_metformin','cigh'],
+  lithium:['li_oor','renal','tft'],
+  rispal:['prolactin','metabolic','cpze'],
+  olanzapine:['cpze','no_metformin','weight','metabolic'],
+  haloperidol:['qtc','cpze'],
+  quetiapine:['qtc','metabolic']
+};
+function alertKeysFor(med){if(med==='all'){const s=new Set();Object.values(MEDALERTS).forEach(a=>a.forEach(k=>s.add(k)));return [...s];}return MEDALERTS[med]||[];}
+const _HALERT={JD:['myocarditis','cigh'],SS:['no_metformin'],MR:['li_oor','renal'],LP:['metabolic'],NF:['no_metformin','cpze'],TK:['qtc'],BG:['weight'],AB:['prolactin'],CH:['metabolic','prolactin'],PT:['tdm_oor'],EW:[],RJ:['qtc','weight']};
+PATIENTS.forEach(p=>{if(!p.alerts)p.alerts=_HALERT[p.id]||[];});
+
+/* ---------------- SYNTHETIC COHORT TOP-UP (mock only) ---------------- */
+/* pads each medication cohort up to its notional count so lists/counts are consistent */
+const _WARDS=['Acute A','Acute B','PICU','Older Adult','Rehab'],_MHAS=['TA','Voluntary','TSO','FO'],_STG=['init','stab','maint'],_DX=['Schizophrenia','Schizoaffective','Bipolar','First episode psychosis','Psychotic depression','BPSD','Mania'],_DLAB={clozapine:'Clozapine',lithium:'Lithium',rispal:'Paliperidone',olanzapine:'Olanzapine',haloperidol:'Haloperidol',quetiapine:'Quetiapine'};
+let _gid=0;function _rnd(a){return a[Math.floor(Math.random()*a.length)];}
+function generateCohorts(){
+  const OUTMAP=['Med review due','Metabolic check due','ADR review','Comorbidity review','Social review','Discharge / med rec'];
+  Object.keys(MEDS).forEach(med=>{const m=MEDS[med];if(med==='all'||m.pick===false)return;
+    let have=PATIENTS.filter(p=>(p.meds||[]).includes(med)).length;
+    const ak=MEDALERTS[med]||[];
+    for(;have<m.n;have++){_gid++;
+      const s=Array.from({length:6},()=>{const r=Math.random();return r<0.06?'r':r<0.21?'a':r<0.25?'e':'g';});
+      const out=s.map((x,i)=>(x==='r'||x==='a')?OUTMAP[i]:null).filter(Boolean).slice(0,2);
+      const alerts=ak.filter(()=>Math.random()<0.28);
+      PATIENTS.push({id:'G'+_gid,name:String.fromCharCode(65+Math.floor(Math.random()*26))+'.'+String.fromCharCode(65+Math.floor(Math.random()*26))+'.',ward:_rnd(_WARDS),mha:_rnd(_MHAS),st:_rnd(_STG),meds:[med],s:s,out:out,alerts:alerts,age:20+Math.floor(Math.random()*55),sex:_rnd(['Male','Female']),dx:_rnd(_DX),los:1+Math.floor(Math.random()*30),regime:[[(_DLAB[med]||'Antipsychotic')+' (illustrative regime)']]});
+    }});
+  MEDS.all.n=PATIENTS.length;
+}
 
 /* ---------------- SPARKLINES ---------------- */
 function drawSparks(scope){(scope||document).querySelectorAll('canvas.spark').forEach(cv=>{
@@ -694,8 +750,8 @@ function drawSparks(scope){(scope||document).querySelectorAll('canvas.spark').fo
     options:{plugins:{legend:{display:false},tooltip:{enabled:false}},scales:{x:{display:false},y:{display:false}},animation:false}});});}
 
 /* ---------------- STATE ---------------- */
-const state={med:'clozapine',clin:null};
-function setMed(m){state.med=m;const M=MEDS[m];
+const state={med:'clozapine',clin:null,alert:null,patient:'JD',needsAction:false};
+function setMed(m){state.med=m;state.clin=null;state.alert=null;const M=MEDS[m];
   document.getElementById('med-name').textContent=M.name;
   document.getElementById('med-n').textContent=M.n+' current inpatients';
   document.getElementById('med-select').value=m;
@@ -719,49 +775,47 @@ function buildLanding(){
 /* ---------------- CLINICIAN ---------------- */
 function renderClinician(){
   const M=MEDS[state.med];
-  document.getElementById('clin-listsub').textContent=M.name+' · '+M.n+' current inpatients · sorted by clinical priority · click a row for full patient detail';
   const score=p=>p.s.reduce((a,s)=>a+(s==='r'?3:s==='a'?1:s==='e'?0.5:0),0);
-  const ranked=[...PATIENTS].sort((a,b)=>score(b)-score(a));
-  // domain summary counts
-  const counts=DOMAINS.map((d,i)=>{let r=0,a=0;PATIENTS.forEach(p=>{if(p.s[i]==='r')r++;else if(p.s[i]==='a')a++;});return {r,a};});
+  const medCohort=state.med==='all'?PATIENTS.slice():PATIENTS.filter(p=>(p.meds||[]).includes(state.med));
+  const needs=p=>p.s.some(x=>x==='r'||x==='a'||x==='e');
+  // domain summary counts (across full med cohort; predicate matches domain filter = r/a/e)
+  const counts=DOMAINS.map((d,i)=>{let r=0,a=0,e=0;medCohort.forEach(p=>{const v=p.s[i];if(v==='r')r++;else if(v==='a')a++;else if(v==='e')e++;});return {r,a,e};});
   document.getElementById('clin-domsum').innerHTML=DOMAINS.map((d,i)=>{
-    const c=counts[i];const cls=c.r>0?'r':c.a>0?'a':'g';
+    const c=counts[i];const tot=c.r+c.a+c.e;const cls=c.r>0?'r':(c.a+c.e>0)?'a':'g';
     return `<div class="domcard ${cls}${state.clin===i?' active':''}" data-di="${i}"><div class="dic">${d.ic}</div>
       <div class="dnm">${d.name}${d.illus?` <span class="badge-illus">${d.illus==='partial'?'part':'illus'}</span>`:''}</div>
-      <div class="dct" style="color:${cls==='r'?RAG.red:cls==='a'?RAG.amber:RAG.green}">${c.r+c.a}</div>
+      <div class="dct" style="color:${cls==='r'?RAG.red:cls==='a'?RAG.amber:RAG.green}">${tot}</div>
       <div class="dlb">need attention</div></div>`;}).join('');
-  // apply domain filter
-  const list=state.clin===null?ranked:ranked.filter(p=>['r','a','e'].includes(p.s[state.clin]));
-  document.getElementById('clin-listsub').innerHTML=(state.clin===null
-    ? M.name+' · '+M.n+' current inpatients · sorted by clinical priority · click a domain card to filter, or a row for full patient detail'
-    : M.name+' · showing '+list.length+' patient'+(list.length===1?'':'s')+' needing attention in <b>'+DOMNAMES[state.clin]+'</b> <span class="filternote" id="clin-clear">✕ clear filter</span>');
+  // build the visible list: alert filter > domain filter > needs-action/all
+  let list;
+  if(state.alert){list=medCohort.filter(p=>(p.alerts||[]).includes(state.alert));}
+  else if(state.clin!==null){list=medCohort.filter(p=>['r','a','e'].includes(p.s[state.clin]));}
+  else{list=state.needsAction?medCohort.filter(needs):medCohort.slice();}
+  list.sort((a,b)=>score(b)-score(a));
+  document.getElementById('clin-listsub').innerHTML=(
+    state.alert
+      ? M.name+' · showing '+list.length+' patient'+(list.length===1?'':'s')+' with <b>'+ALERTDEF[state.alert][2]+'</b> <span class="filternote" id="clin-clear">✕ clear filter</span>'
+    : state.clin!==null
+      ? M.name+' · showing '+list.length+' patient'+(list.length===1?'':'s')+' needing attention in <b>'+DOMNAMES[state.clin]+'</b> <span class="filternote" id="clin-clear">✕ clear filter</span>'
+    : M.name+' · showing '+list.length+' of '+medCohort.length+' '+M.name+' inpatients'+(state.needsAction?' · needs action only':'')+' · sorted by clinical priority · click a domain card or alert to filter, or a row for detail');
   // patient table
   let t='<thead><tr><th>Patient</th><th>Ward</th><th>MHA</th><th>Stage</th>'+DOMNAMES.map((n,i)=>`<th class="domcol${state.clin===i?' hl':''}">${n}</th>`).join('')+'<th>Outstanding</th></tr></thead><tbody>';
-  if(list.length===0){t+=`<tr><td colspan="11" style="text-align:center;color:var(--muted);padding:16px">No patients currently need attention in this domain.</td></tr>`;}
+  if(list.length===0){t+=`<tr><td colspan="11" style="text-align:center;color:var(--muted);padding:16px">No patients match the current filter.</td></tr>`;}
   list.forEach(p=>{t+=`<tr class="click" data-pid="${p.id}">
     <td><span class="pid">${p.name}</span></td><td>${p.ward}</td><td>${p.mha}</td><td><span class="stg ${p.st}">${STAGE_LABEL[p.st]}</span></td>`+
     p.s.map((s,i)=>`<td class="domcol${state.clin===i?' hl':''}"><span class="dot ${s}"></span></td>`).join('')+
     `<td class="sub-td">${p.out.map(o=>`<span class="flag ${/>|↑|<|review|overdue|due/i.test(o)?'a':'b'}">${o}</span>`).join('')}</td></tr>`;});
   t+='</tbody>';document.getElementById('clin-table').innerHTML=t;
   document.querySelectorAll('#clin-table tr.click').forEach(r=>r.addEventListener('click',()=>openPatient(r.dataset.pid)));
-  const clr=document.getElementById('clin-clear');if(clr)clr.addEventListener('click',()=>{state.clin=null;renderClinician();});
-  // alerts (med-aware)
-  const A={
-    clozapine:[['r','🩸','Myocarditis risk','CRP >5.0 mg/L in titration wks 1–4',2],['r','⚗','TDM out of range','<350 (sub) or >1000 (toxic) ng/mL',3],['r','⬆','High antipsychotic dose','>1000 mg chlorpromazine-equivalents/day (CPZE)',2],['a','💊','No metformin co-prescription','Newly started clozapine without metformin',3],['a','💩','CIGH risk','Bowel chart incomplete / no aperient',5]],
-    lithium:[['r','⚖','Level out of range','>1.0 or <0.4 mmol/L',4],['a','🫘','Renal decline','eGFR 30–59 mL/min',2],['a','🦋','TFT abnormal','FT4 out of range',3]],
-    valproate:[['r','🧪','Toxicity risk','Albumin <35 g/L or ammonia >47 µmol/L',2],['a','♀','Contraception gap','Female <50, none charted',2],['a','⚗','Supratherapeutic','Level >100',3]],
-    benzo:[['r','💊','Long-term use','Regular order >3 weeks',6],['a','⬆','High dose','>80 mg diazepam-equivalents',4]],
-    rispal:[['r','📈','Hyperprolactinaemia','Prolactin >1000 mU/L',4],['a','❤','Metabolic overdue','Lipids / glucose >12 mo',5]],
-    olanzapine:[['r','⬆','High antipsychotic dose','>1000 mg chlorpromazine-equivalents/day (CPZE)',2],['a','💊','No metformin co-prescription','Newly started olanzapine without metformin',6],['a','⚖','Weight gain','≥3–5% from admission',8]],
-    haloperidol:[['a','📉','QTc prolongation','QTc >450 ms',2],['r','⬆','High antipsychotic dose','>1000 mg CPZE/day',1]],
-    quetiapine:[['a','◷','In development','Indicators awaiting definition',0]],
-    all:[['r','⬆','High antipsychotic dose','>1000 mg chlorpromazine-equivalents/day (CPZE)',9],['r','⚗','TDM out of range','Across high-risk agents',12],['a','💊','No metformin co-prescription','Newly started clozapine/olanzapine',14],['a','❤','Metabolic overdue','Bundle incomplete',23]]
-  };
-  document.getElementById('clin-alerts').innerHTML=(A[state.med]||A.all).map(x=>`
-    <div style="display:flex;gap:10px;padding:9px 11px;border-radius:7px;border:1px solid var(--line);margin-bottom:8px;border-left:4px solid ${x[0]==='r'?RAG.red:RAG.amber}">
+  const clr=document.getElementById('clin-clear');if(clr)clr.addEventListener('click',()=>{state.clin=null;state.alert=null;renderClinician();});
+  // priority alerts — data-driven: the number == the patients you see when you click it
+  const arows=alertKeysFor(state.med).map(k=>({k:k,def:ALERTDEF[k],n:medCohort.filter(p=>(p.alerts||[]).includes(k)).length})).filter(a=>a.n>0);
+  arows.sort((a,b)=>((a.def[0]==='r'?0:1)-(b.def[0]==='r'?0:1))||(b.n-a.n));
+  document.getElementById('clin-alerts').innerHTML=arows.length?arows.map(a=>{const x=a.def;return `<div class="alertbox${state.alert===a.k?' on':''}" data-key="${a.k}" title="Click to see these patients" style="cursor:pointer">
+      <div style="display:flex;gap:10px;padding:9px 11px;border-radius:7px;border:1px solid var(--line);margin-bottom:8px;border-left:4px solid ${x[0]==='r'?RAG.red:RAG.amber}">
       <div style="width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;background:${x[0]==='r'?'var(--red-bg)':'var(--amber-bg)'}">${x[1]}</div>
-      <div style="flex:1"><div style="font-weight:700;font-size:12px">${x[2]}</div><div style="font-size:10.5px;color:var(--muted);margin-top:2px">${x[3]}</div></div>
-      <div style="font-size:19px;font-weight:700;color:${x[0]==='r'?RAG.red:'#b9831a'}">${x[4]}</div></div>`).join('');
+      <div style="flex:1"><div style="font-weight:700;font-size:12px">${x[2]} <span class="agt">›</span></div><div style="font-size:10.5px;color:var(--muted);margin-top:2px">${x[3]}</div></div>
+      <div style="font-size:19px;font-weight:700;color:${x[0]==='r'?RAG.red:'#b9831a'}">${a.n}</div></div></div>`;}).join(''):'<div class="note">No active alerts for this cohort.</div>';
   document.getElementById('clin-insight').innerHTML='💡 For the <b>'+M.name+'</b> cohort, the daily view surfaces patient-level actions across all six domains. Click any patient to open their full longitudinal record for ward round or medication review.';
 }
 
@@ -853,50 +907,69 @@ function renderGovernance(){
 
 /* ---------------- PATIENT 360 ---------------- */
 let p360charts=false;
-function openPatient(pid){
-  const p=PATIENTS.find(x=>x.id===pid)||PATIENTS[0];
+const CMI_SA='https://www.sahealth.sa.gov.au/wps/wcm/connect/public+content/sa+health+internet/clinical+resources/clinical+programs+and+practice+guidelines/mental+health/choice+and+medication+sa+health+portal';
+const CMI_QH='https://www.health.qld.gov.au/public-health/topics/mhaod/for-consumers-clients-and-carers';
+function openPatient(pid){state.patient=pid;show('patient');}
+function detailFor(p){
+  const g=RAG.green,a=RAG.amber,r=RAG.red;
+  const key=(p.meds&&p.meds[0])||'none';
+  const T={
+    clozapine:{chg:[['Weight','96 kg','+10 kg','up','from adm 86 kg','vs prev adm 92 kg (+4)'],['BMI','31.4','+3.3','up','from adm 28.1','vs prev adm 30.1 (+1.3)'],['CRP','7.2 mg/L','+5.1','up','from adm 2.1','vs prev adm 3.0 (+4.2)'],['Clozapine level','470 ng/mL','→ in range','down','from adm 280','vs prev adm 300'],['WCC','6.6 ×10⁹/L','stable','flat','from adm 6.8','vs prev adm 7.0']],
+      pct:[64,31,27,12,10,10],combo:{weight:[86,88,90,92,94,96],prn:[5,3,6,2,4,1]},
+      trends:[{t:'WCC (×10⁹/L)',now:'6.6',col:g,data:[6.8,7.1,6.9,7.4,7.0,6.6],thr:null},{t:'Clozapine (ng/mL)',now:'470',col:g,data:[280,320,360,410,440,470],thr:350},{t:'CRP (mg/L)',now:'7.2',col:r,data:[2.1,2.4,3,4.5,6.1,7.2],thr:5},{t:'QTc (ms)',now:'447',col:a,data:[420,425,431,438,441,447],thr:450},{t:'Weight (kg)',now:'96',col:a,data:[86,88,90,92,94,96],thr:null}]},
+    lithium:{chg:[['Weight','79 kg','+2 kg','up','from adm 77 kg','vs prev adm 78 kg (+1)'],['BMI','27.1','+0.7','up','from adm 26.4','vs prev adm 26.8'],['Lithium level','1.3 mmol/L','+0.4','up','from adm 0.9','vs prev adm 1.1 (+0.2)'],['eGFR','58 mL/min','−8 (worse)','up','from adm 66','vs prev adm 63'],['TSH','4.8 mIU/L','+1.6','up','from adm 3.2','vs prev adm 3.9']],
+      pct:[12,9,8,3,6,4],combo:{weight:[77,77,78,78,79,79],prn:[1,0,1,0,1,0]},
+      trends:[{t:'Lithium (mmol/L)',now:'1.3',col:r,data:[0.9,1.0,1.1,1.2,1.2,1.3],thr:1.0},{t:'eGFR (mL/min)',now:'58',col:a,data:[66,64,63,61,60,58],thr:60},{t:'TSH (mIU/L)',now:'4.8',col:a,data:[3.2,3.5,3.7,4.1,4.4,4.8],thr:4.0},{t:'Weight (kg)',now:'79',col:g,data:[77,77,78,78,79,79],thr:null}]},
+    valproate:{chg:[['Weight','88 kg','+4 kg','up','from adm 84 kg','vs prev adm 86 kg (+2)'],['BMI','29.0','+1.3','up','from adm 27.7','vs prev adm 28.4'],['Valproate level','105 mg/L','+25','up','from adm 80','vs prev adm 92'],['Ammonia','55 µmol/L','+30','up','from adm 25','vs prev adm 40'],['Albumin','33 g/L','−4','up','from adm 37','vs prev adm 35']],
+      pct:[30,18,15,8,7,9],combo:{weight:[84,85,86,86,87,88],prn:[2,1,2,1,1,0]},
+      trends:[{t:'Valproate (mg/L)',now:'105',col:r,data:[80,88,92,98,101,105],thr:100},{t:'Ammonia (µmol/L)',now:'55',col:r,data:[25,30,38,45,50,55],thr:47},{t:'Albumin (g/L)',now:'33',col:a,data:[37,36,35,35,34,33],thr:35},{t:'Weight (kg)',now:'88',col:a,data:[84,85,86,86,87,88],thr:null}]},
+    olanzapine:{chg:[['Weight','98 kg','+12 kg','up','from adm 86 kg','vs prev adm 93 kg (+5)'],['BMI','32.0','+3.9','up','from adm 28.1','vs prev adm 30.4'],['Fasting glucose','6.8 mmol/L','+1.6','up','from adm 5.2','vs prev adm 6.1'],['HbA1c','6.7 %','+0.9','up','from adm 5.8','vs prev adm 6.3'],['Metformin','Not charted','review','up','—','flag: no metformin']],
+      pct:[70,35,30,16,12,14],combo:{weight:[86,89,91,93,96,98],prn:[3,2,4,3,2,1]},
+      trends:[{t:'Weight (kg)',now:'98',col:r,data:[86,89,91,93,96,98],thr:null},{t:'Fasting glucose',now:'6.8',col:a,data:[5.2,5.6,6.0,6.3,6.6,6.8],thr:7.0},{t:'HbA1c (%)',now:'6.7',col:a,data:[5.8,6.0,6.2,6.4,6.5,6.7],thr:6.5},{t:'QTc (ms)',now:'438',col:g,data:[420,424,428,431,435,438],thr:450}]},
+    rispal:{chg:[['Weight','82 kg','+3 kg','up','from adm 79 kg','vs prev adm 81 kg'],['BMI','27.5','+1.0','up','from adm 26.5','vs prev adm 27.1'],['Prolactin','1250 mU/L','+700','up','from adm 550','vs prev adm 900'],['Fasting glucose','5.6 mmol/L','+0.3','up','from adm 5.3','vs prev adm 5.5'],['QTc','430 ms','+8','up','from adm 422','vs prev adm 426']],
+      pct:[20,12,10,5,6,7],combo:{weight:[79,80,80,81,81,82],prn:[1,1,0,1,0,0]},
+      trends:[{t:'Prolactin (mU/L)',now:'1250',col:r,data:[550,700,850,1000,1120,1250],thr:1000},{t:'Weight (kg)',now:'82',col:g,data:[79,80,80,81,81,82],thr:null},{t:'QTc (ms)',now:'430',col:g,data:[422,424,426,428,429,430],thr:450}]},
+    haloperidol:{chg:[['Weight','74 kg','+1 kg','up','from adm 73 kg','vs prev adm 74 kg'],['BMI','24.8','+0.3','up','from adm 24.5','vs prev adm 24.7'],['QTc','462 ms','+30','up','from adm 432','vs prev adm 450 (+12)'],['HR','58 bpm','−6','up','from adm 64','vs prev adm 61'],['Potassium','3.6 mmol/L','−0.3','up','from adm 3.9','vs prev adm 3.7']],
+      pct:[8,5,4,2,4,3],combo:{weight:[73,73,73,74,74,74],prn:[1,1,1,0,1,0]},
+      trends:[{t:'QTc (ms)',now:'462',col:r,data:[432,440,447,452,457,462],thr:450},{t:'HR (bpm)',now:'58',col:a,data:[64,63,62,60,59,58],thr:60},{t:'Weight (kg)',now:'74',col:g,data:[73,73,73,74,74,74],thr:null}]},
+    quetiapine:{chg:[['Weight','90 kg','+6 kg','up','from adm 84 kg','vs prev adm 88 kg (+2)'],['BMI','29.7','+2.0','up','from adm 27.7','vs prev adm 29.0'],['Fasting glucose','6.1 mmol/L','+0.7','up','from adm 5.4','vs prev adm 5.9'],['QTc','444 ms','+18','up','from adm 426','vs prev adm 438'],['HbA1c','6.2 %','+0.4','up','from adm 5.8','vs prev adm 6.0']],
+      pct:[40,22,18,10,9,11],combo:{weight:[84,86,87,88,89,90],prn:[2,2,1,2,1,1]},
+      trends:[{t:'Weight (kg)',now:'90',col:a,data:[84,86,87,88,89,90],thr:null},{t:'Fasting glucose',now:'6.1',col:a,data:[5.4,5.6,5.8,5.9,6.0,6.1],thr:7.0},{t:'QTc (ms)',now:'444',col:a,data:[426,430,434,438,441,444],thr:450}]},
+    none:{chg:[['Weight','68 kg','−2 kg','down','from adm 70 kg','vs prev adm 69 kg'],['BMI','25.3','−0.7','down','from adm 26.0','vs prev adm 25.6'],['Blood pressure','148/90','+16 sys','up','from adm 132/82','vs prev adm 140/86'],['Sodium','132 mmol/L','−6','up','from adm 138','vs prev adm 135'],['QTc','455 ms','+20','up','from adm 435','vs prev adm 447']],
+      pct:[6,4,5,3,12,2],combo:{weight:[70,70,69,69,68,68],prn:[0,0,0,0,0,0]},
+      trends:[{t:'Systolic BP (mmHg)',now:'148',col:r,data:[132,136,140,143,146,148],thr:140},{t:'Sodium (mmol/L)',now:'132',col:a,data:[138,137,136,134,133,132],thr:135},{t:'QTc (ms)',now:'455',col:r,data:[435,440,445,449,452,455],thr:450},{t:'Weight (kg)',now:'68',col:g,data:[70,70,69,69,68,68],thr:null}]}
+  };
+  return T[key]||T.none;
+}
+function renderPatientDetail(){
+  const p=PATIENTS.find(x=>x.id===state.patient)||PATIENTS[0];
   document.getElementById('p-init').textContent=p.id;
   document.getElementById('p-name').textContent='Patient '+p.name;
   document.getElementById('p-meta').textContent=`${p.age} y · ${p.sex} · ${p.ward} · ${p.dx} · MHA ${p.mha} · LOS ${p.los} d`;
-  show('patient');
-}
-function buildP360(){
-  if(p360charts)return;p360charts=true;
-  // change-since-admission cards (clinicians favour change metrics)
-  const chg=[
-    ['Weight','96 kg','+10 kg','up','from adm 86 kg','vs prev adm 92 kg (+4)'],
-    ['BMI','31.4','+3.3','up','from adm 28.1','vs prev adm 30.1 (+1.3)'],
-    ['CRP','7.2 mg/L','+5.1','up','from adm 2.1','vs prev adm 3.0 (+4.2)'],
-    ['QTc','447 ms','+27 ms','up','from adm 420','vs prev adm 438 (+9)'],
-    ['Clozapine level','470 ng/mL','→ in range','down','from adm 280','vs prev adm 300']];
-  document.getElementById('p-changegrid').innerHTML=chg.map(c=>`
+  document.getElementById('p-meds').innerHTML=(p.regime||[]).map(m=>`<div class="medrow"><span class="mn">${m[0]} <a class="cmi" href="${CMI_SA}" target="_blank" rel="noopener" title="SA Health · Choice and Medication printable leaflets">SA ↗</a> <a class="cmi" href="${CMI_QH}" target="_blank" rel="noopener" title="Queensland Health · mental-health medicines info">QH ↗</a></span>${m[1]?`<span class="flag ${m[2]||'b'}">${m[1]}</span>`:''}</div>`).join('')||'<div class="note">No regime recorded.</div>';
+  document.getElementById('p-alerts').innerHTML=(p.out||[]).map(o=>{const cls=/>|↑|<|toxic|risk|overdue|due|review|ammonia|contracept|350/i.test(o)?'a':'b';return `<div class="medrow"><span class="mn">${o}</span><span class="flag ${cls}">action</span></div>`;}).join('')||'<div class="note">No outstanding alerts.</div>';
+  document.getElementById('p-detail').className='p-detail change-mode';
+  document.querySelectorAll('#p-toggle button').forEach(b=>b.classList.toggle('on',b.dataset.mode==='change'));
+  const d=detailFor(p);
+  document.getElementById('p-changegrid').innerHTML=d.chg.map(c=>`
     <div class="chg"><div class="cl">${c[0]}</div><div class="cnow">${c[1]}</div>
-    <div class="cdelta ${c[3]}">${c[3]==='up'?'▲ ':c[3]==='down'?'▼ ':''}${c[2]}</div><div class="cbase">${c[4]}</div><div class="cbase" style="color:var(--primary)">${c[5]}</div></div>`).join('');
-  // metabolic % change from admission (replaces radar — easier to read)
+    <div class="cdelta ${c[3]}">${c[2]}</div><div class="cbase">${c[4]}</div><div class="cbase" style="color:var(--primary)">${c[5]}</div></div>`).join('');
+  Object.keys(charts).filter(k=>k==='p-change'||k==='p-combo'||/^pt\d+$/.test(k)).forEach(destroy);
   charts['p-change']=new Chart(document.getElementById('p-change'),{type:'bar',
-    data:{labels:['Triglycerides','Fasting glucose','Cholesterol','BMI','Systolic BP','Waist'],
-      datasets:[{data:[64,31,27,12,10,10],backgroundColor:RAG.red,borderRadius:3}]},
-    options:{indexAxis:'y',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'+'+c.parsed.x+'% since admission'}}},
-      scales:{x:{grid:gridLine,title:{display:true,text:'% change from admission'},ticks:{callback:v=>'+'+v+'%'}},y:{grid:noGrid}}}});
-  // weight & PRN combo
+    data:{labels:['Triglycerides','Fasting glucose','Cholesterol','BMI','Systolic BP','Waist'],datasets:[{data:d.pct,backgroundColor:RAG.red,borderRadius:3}]},
+    options:{indexAxis:'y',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'+'+c.parsed.x+'% since admission'}}},scales:{x:{grid:gridLine,title:{display:true,text:'% change from admission'},ticks:{callback:v=>'+'+v+'%'}},y:{grid:noGrid}}}});
+  const wmin=Math.min(...d.combo.weight)-4,wmax=Math.max(...d.combo.weight)+4;
   charts['p-combo']=new Chart(document.getElementById('p-combo'),{
     data:{labels:['Wk1','Wk2','Wk3','Wk4','Wk5','Wk6'],datasets:[
-      {type:'bar',label:'PRN doses',data:[5,3,6,2,4,1],backgroundColor:RAG.soft,order:2},
-      {type:'line',label:'Weight (kg)',data:[86,88,90,92,94,96],borderColor:RAG.red,backgroundColor:RAG.red,borderWidth:2,tension:.3,pointRadius:3,yAxisID:'y1',order:1}]},
-    options:{plugins:{legend:{position:'bottom'}},scales:{x:{grid:noGrid},y:{grid:gridLine,title:{display:true,text:'PRN doses'}},y1:{position:'right',grid:noGrid,suggestedMin:80,suggestedMax:100,title:{display:true,text:'Weight'}}}}});
-  // monitoring trend mini-charts — now with y-axis scale + threshold line
-  const trends=[
-    {t:'WCC (×10⁹/L)',now:'6.6',col:RAG.green,data:[6.8,7.1,6.9,7.4,7.0,6.6],thr:null},
-    {t:'Clozapine (ng/mL)',now:'470',col:RAG.green,data:[280,320,360,410,440,470],thr:350},
-    {t:'CRP (mg/L)',now:'7.2',col:RAG.red,data:[2.1,2.4,3,4.5,6.1,7.2],thr:5},
-    {t:'QTc (ms)',now:'447',col:RAG.amber,data:[420,425,431,438,441,447],thr:450},
-    {t:'Weight (kg)',now:'96',col:RAG.amber,data:[86,88,90,92,94,96],thr:null}];
+      {type:'bar',label:'PRN doses',data:d.combo.prn,backgroundColor:RAG.soft,order:2},
+      {type:'line',label:'Weight (kg)',data:d.combo.weight,borderColor:RAG.red,backgroundColor:RAG.red,borderWidth:2,tension:.3,pointRadius:3,yAxisID:'y1',order:1}]},
+    options:{plugins:{legend:{position:'bottom'}},scales:{x:{grid:noGrid},y:{grid:gridLine,title:{display:true,text:'PRN doses'}},y1:{position:'right',grid:noGrid,suggestedMin:wmin,suggestedMax:wmax,title:{display:true,text:'Weight'}}}}});
   const wrap=document.getElementById('p-trends');wrap.innerHTML='';
-  trends.forEach((tr,i)=>{const div=document.createElement('div');div.className='miniwrap';
+  d.trends.forEach((tr,i)=>{const div=document.createElement('div');div.className='miniwrap';
     div.innerHTML=`<div class="mt"><span>${tr.t}</span><span class="mv2" style="color:${tr.col}">${tr.now}</span></div><div class="mini"><canvas id="pt${i}"></canvas></div>`;
     wrap.appendChild(div);});
-  trends.forEach((tr,i)=>{const plg=[];
-    if(tr.thr!==null)plg.push({id:'thr'+i,afterDraw(c){const{ctx,chartArea:{left,right},scales:{y}}=c;const yy=y.getPixelForValue(tr.thr);ctx.save();ctx.strokeStyle=RAG.red;ctx.setLineDash([4,3]);ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(left,yy);ctx.lineTo(right,yy);ctx.stroke();ctx.restore();}});
+  d.trends.forEach((tr,i)=>{const plg=[];
+    if(tr.thr!==null&&tr.thr!==undefined)plg.push({id:'thr'+i,afterDraw(c){const{ctx,chartArea:{left,right},scales:{y}}=c;const yy=y.getPixelForValue(tr.thr);ctx.save();ctx.strokeStyle=RAG.red;ctx.setLineDash([4,3]);ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(left,yy);ctx.lineTo(right,yy);ctx.stroke();ctx.restore();}});
     charts['pt'+i]=new Chart(document.getElementById('pt'+i),{type:'line',
       data:{labels:['1','2','3','4','5','6'],datasets:[{data:tr.data,borderColor:tr.col,backgroundColor:'transparent',borderWidth:2,tension:.3,pointRadius:0}]},
       options:{plugins:{legend:{display:false},tooltip:{enabled:false}},scales:{x:{display:false},y:{grid:gridLine,ticks:{font:{size:8},maxTicksLimit:4}}}},plugins:plg});});
@@ -922,19 +995,22 @@ function show(view){
   if(view==='clinician'){renderClinician();built.clinician=true;}
   if(view==='governance'){renderGovernance();built.governance=true;}
   if(view==='stewardship'){renderStewardship();built.stewardship=true;}
-  if(view==='patient'){buildP360();}
+  if(view==='patient'){renderPatientDetail();}
   setTimeout(()=>{Object.values(charts).forEach(c=>{try{c.resize();}catch(e){}});},30);
   window.scrollTo(0,0);
 }
 document.getElementById('nav').addEventListener('click',e=>{const it=e.target.closest('.nav-item');if(it)show(it.dataset.view);});
 document.getElementById('med-select').addEventListener('change',e=>{setMed(e.target.value);if(e.target.value==='all')show('stewardship');});
-document.getElementById('clin-domsum').addEventListener('click',e=>{const c=e.target.closest('.domcard');if(!c)return;const i=+c.dataset.di;state.clin=(state.clin===i?null:i);renderClinician();});
-document.getElementById('gov-domains').addEventListener('click',e=>{const f=e.target.closest('.gflag');if(!f)return;state.clin=+f.dataset.di;show('clinician');});
+document.getElementById('clin-domsum').addEventListener('click',e=>{const c=e.target.closest('.domcard');if(!c)return;const i=+c.dataset.di;state.alert=null;state.clin=(state.clin===i?null:i);renderClinician();});
+document.getElementById('action-toggle').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;state.needsAction=(b.dataset.mode==='needs');document.querySelectorAll('#action-toggle button').forEach(x=>x.classList.toggle('on',x===b));renderClinician();});
+document.getElementById('gov-domains').addEventListener('click',e=>{const f=e.target.closest('.gflag');if(!f)return;state.alert=null;state.clin=+f.dataset.di;show('clinician');});
+document.getElementById('clin-alerts').addEventListener('click',e=>{const b=e.target.closest('.alertbox[data-key]');if(!b)return;const k=b.dataset.key;state.clin=null;state.alert=(state.alert===k?null:k);renderClinician();document.getElementById('clin-table').scrollIntoView({behavior:'smooth',block:'nearest'});});
 document.getElementById('dom-toggle').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;domMode=b.dataset.mode;document.querySelectorAll('#dom-toggle button').forEach(x=>x.classList.remove('on'));b.classList.add('on');applyDomMode();});
 document.getElementById('p-toggle').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;document.querySelectorAll('#p-toggle button').forEach(x=>x.classList.remove('on'));b.classList.add('on');document.getElementById('p-detail').classList.toggle('change-mode',b.dataset.mode==='change');setTimeout(()=>Object.values(charts).forEach(c=>{try{c.resize();}catch(e){}}),20);});
 
 /* boot */
 initTooltips();
+generateCohorts();
 buildLanding();
 setMed('clozapine');
 show('landing');
