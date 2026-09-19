@@ -496,6 +496,8 @@
             </div>
           </div>
 
+          <div id="p-budget"></div>
+
           <div class="grid g-2 detail-only">
             <div class="card">
               <div class="card-head"><div><h3>Weight &amp; PRN administrations</h3><div class="csub">Correlating weight gain with treatment · by week</div></div></div>
@@ -891,7 +893,7 @@ const NOTES=[
   ['Personalisation &amp; user-based access','Added a <b>Treating clinician</b> filter (physician identification) plus ward / age-group filters and patient search.','Built as a <b>simulated</b> role/clinician filter. True role-based access and per-user login need a backend with authentication &amp; SSO — not possible in a single self-contained file.'],
   ['Clozapine stewardship &amp; monitoring','Added agranulocytosis surveillance: dated <b>WBC &amp; ANC</b> per patient, stage-appropriate frequency, cohort haematological safety card, plus myocarditis / CIGH / metabolic AEs.','ANC bands and dated results are <b>illustrative</b>; live values need a laboratory feed. Frequency logic to be confirmed against the local clozapine protocol.'],
   ['Flexible filtering &amp; date range','Ward, age group, treating clinician, medication and free-text search all filter the cohort, counts and lists. The Period control changes the trend window.','Date-range filtering runs over <b>illustrative</b> time-series; real windows need historical EMR data.'],
-  ['Governance &amp; economic (formulary + cost)','Added a governance &amp; economic panel: Fornas formulary status, indicative unit cost, and a <b>BPJS INA-CBG claim vs hospital cost</b> breakdown from the example you supplied.','Figures are the single <b>illustrative</b> example provided. Production needs a finance / BPJS casemix (INA-CBG) data feed and case-mix adjustment.'],
+  ['Governance &amp; economic (formulary + cost)','Added a governance &amp; economic panel (Fornas formulary status, indicative unit cost, <b>BPJS INA-CBG claim vs hospital cost</b>) and a <b>per-patient budget</b> card in patient detail that estimates the claim vs that patient\'s cost from diagnosis, length of stay and medicines.','Figures are <b>illustrative</b> (built from the example you supplied plus LOS/medicine scaling). Production needs a finance / BPJS casemix (INA-CBG) data feed and validated unit costs.'],
   ['Mobile usability &amp; navigation','Added a responsive layout, a collapsible sidebar (☰) for small screens, and a <b>‹ Landing</b> back control on every view.','A dense clinical dashboard on a phone is inherently a compromise; the clinician view is prioritised for small screens rather than full parity.'],
   ['Patient-level traceability','Every aggregate flag drills to the patient, and each patient now has a <b>“Why this patient is flagged”</b> panel naming the domain and the specific outstanding item.','Reasons are drawn from the illustrative per-patient flags; live wording will come from the EMR indicator logic.'],
   ['Medication management','Added medication history (started / ceased this admission, prior home psychotropics), <b>drug interactions</b>, regimen changes and a prescribing-review note per patient.','Interaction list is an <b>illustrative</b> set; a production build should call a maintained drug-interaction service.'],
@@ -1124,6 +1126,30 @@ function clozHaem(p){
   const nextDue=p.st==='maint'?'Next FBC due 25 Jul (monthly)':'Next FBC due in 7 days';
   return {freq,rows,nextDue};
 }
+/* ---- per-patient budget (BPJS INA-CBG claim vs this patient's cost) ---- */
+function patientBudget(p){
+  const los=p.los||10, medKey=(p.meds&&p.meds[0])||'none';
+  const medCost={clozapine:520000,lithium:180000,valproate:240000,olanzapine:360000,rispal:300000,haloperidol:90000,quetiapine:420000,none:120000}[medKey]||200000;
+  const labCost={clozapine:900000,lithium:600000,valproate:550000,olanzapine:450000,rispal:400000,haloperidol:380000,quetiapine:400000,none:300000}[medKey]||400000;
+  // INA-CBG base tarif by diagnosis (illustrative)
+  const dxTarif=[[/schizoaffective/i,5620000,'Schizoaffective'],[/schiz/i,5748200,'Schizophrenia'],[/bipolar|mania/i,5120000,'Bipolar / mood'],[/depress/i,4680000,'Mood (depressive)'],[/BPSD|dementia/i,6100000,'Organic / BPSD'],[/psychosis|psychotic/i,5480000,'Psychosis']];
+  let base=5200000, dxlab='Mental & behavioural';
+  for(const [re,t,l] of dxTarif){if(re.test(p.dx||'')){base=t;dxlab=l;break;}}
+  // severity level from length of stay
+  const sev=los>21?'III':los>10?'II':'I', mult=los>21?1.25:los>10?1.12:1;
+  const tarif=Math.round(base*mult);
+  const code=`F-4-1${{'Schizophrenia':0,'Schizoaffective':0,'Bipolar / mood':1,'Mood (depressive)':2,'Organic / BPSD':2,'Psychosis':0,'Mental & behavioural':9}[dxlab]}-${sev} · ${dxlab} (severity ${sev})`;
+  const cost=[
+    ['Accommodation ('+los+' bed-days)', 150000*los],
+    ['Medicines & consumables', medCost],
+    ['Healthcare worker visits (nurse + allied)', 45000*los],
+    ['Doctor visits', 60000*los],
+    ['Laboratory'+(medKey==='clozapine'?' (incl. FBC monitoring)':''), labCost],
+    ['Radiology', medKey==='haloperidol'?150000:0],
+    ['Medical record & clinic fee', 300000]
+  ];
+  return {tarif,code,cost,dxlab,sev};
+}
 function renderPatientDetail(){
   const p=PATIENTS.find(x=>x.id===state.patient)||PATIENTS[0];
   document.getElementById('p-init').textContent=p.id;
@@ -1160,6 +1186,24 @@ function renderPatientDetail(){
     </tbody></table>
     <div class="mtx-cap">ANC bands: <b>Green</b> ≥2.0 · <b>Amber</b> 1.5–2.0 (↑ frequency) · <b>Red</b> &lt;1.5 (withhold, haematology) · <b>Agranulocytosis</b> &lt;0.5 ×10⁹/L. Frequency is stage-appropriate; other clozapine AEs (myocarditis, constipation/CIGH, seizures, metabolic) are surveilled in the trends and alerts.</div>
     </div>`:'';
+  // PER-PATIENT BUDGET (BPJS claim vs this patient's cost)
+  const pb=patientBudget(p);const pbTotal=pb.cost.reduce((a,c)=>a+c[1],0);const pbMargin=pb.tarif-pbTotal;
+  document.getElementById('p-budget').innerHTML=`<div class="card" style="margin-bottom:14px"><div class="card-head"><div><h3>🧾 Patient budget — BPJS claim vs cost <span class="badge-illus">illustrative</span></h3><div class="csub">INA-CBG ${pb.code} · this patient's estimated episode cost (LOS ${p.los} d)</div></div><span class="chip ${pbMargin>=0?'g':'r'}">${pbMargin>=0?'surplus':'deficit'} ${idr(Math.abs(pbMargin))}</span></div>
+    <div class="grid g-2">
+      <div><table class="mtx" style="max-width:100%"><thead><tr><th style="text-align:left">Component</th><th style="text-align:right">Cost</th></tr></thead><tbody>
+        ${pb.cost.map(c=>`<tr><td class="rl">${c[0]}</td><td style="text-align:right">${c[1]?c[1].toLocaleString('en-US'):'—'}</td></tr>`).join('')}
+        <tr><td class="rl">Total episode cost</td><td style="text-align:right"><b>${pbTotal.toLocaleString('en-US')}</b></td></tr>
+        <tr><td class="rl">BPJS claim (tarif)</td><td style="text-align:right"><b>${pb.tarif.toLocaleString('en-US')}</b></td></tr>
+      </tbody></table></div>
+      <div><div class="chartbox h220"><canvas id="p-budget-chart"></canvas></div>
+        <div class="note">Estimated from diagnosis (${pb.dxlab}, severity ${pb.sev}), length of stay and current medicines. A positive margin means the INA-CBG tarif exceeds this patient's illustrative direct costs; a long stay, higher-cost agents (e.g. clozapine) or extra monitoring narrow it. Figures are illustrative pending a finance / BPJS data feed.</div>
+      </div>
+    </div></div>`;
+  destroy('p-budget-chart');
+  charts['p-budget-chart']=new Chart(document.getElementById('p-budget-chart'),{type:'bar',
+    data:{labels:['BPJS claim','Hospital cost'],datasets:[
+      {label:'Amount (IDR)',data:[pb.tarif,pbTotal],backgroundColor:[RAG.blue,pbMargin>=0?RAG.green:RAG.red],borderRadius:4}]},
+    options:{plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>idr(c.parsed.y)}}},scales:{x:{grid:noGrid},y:{grid:gridLine,ticks:{callback:v=>(v/1e6).toFixed(1)+'M'}}}}});
   document.getElementById('p-detail').className='p-detail change-mode';
   document.querySelectorAll('#p-toggle button').forEach(b=>b.classList.toggle('on',b.dataset.mode==='change'));
   const d=detailFor(p);
